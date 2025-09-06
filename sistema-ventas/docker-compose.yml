@@ -1,0 +1,39 @@
+version: "3.9"
+services:
+  db:
+    image: mysql:8.0
+    container_name: miapp-mysql
+    command: >
+      --default-authentication-plugin=caching_sha2_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --default-time-zone=-05:00
+    environment:
+      MYSQL_DATABASE: miappdb
+      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_USER: user
+      MYSQL_PASSWORD: pass
+    ports:
+      - "3307:3306"   # Si ya tienes MySQL local, cámbialo por "3307:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpass"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 10s
+
+  app:
+    build: .
+    container_name: miapp-spring
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: docker
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:
